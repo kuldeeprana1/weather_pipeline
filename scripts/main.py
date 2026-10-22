@@ -31,7 +31,6 @@ POPULATION_CSV = os.path.join(DATA_DIR, "population.csv")
 API_URL = "https://api.open-meteo.com/v1/forecast"
 
 GCP_KEY_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "gcp-key.json")
-GCP_PROJECT = os.environ.get("GCP_PROJECT", "weather-demographics-bootcamp")
 BQ_DATASET = os.environ.get("BQ_DATASET", "global_weather_data")
 BQ_TABLE = "current_weather_stats"
 
@@ -164,8 +163,11 @@ def load_to_bigquery(df: pd.DataFrame) -> None:
             "Create a JSON key in the GCP console and save it as scripts/gcp-key.json."
         )
 
-    client = bigquery.Client.from_service_account_json(GCP_KEY_PATH, project=GCP_PROJECT)
-    table_id = f"{GCP_PROJECT}.{BQ_DATASET}.{BQ_TABLE}"
+    # The client picks the project up from the service-account key itself.
+    # Set $env:GCP_PROJECT only if you need to target a different project.
+    client = bigquery.Client.from_service_account_json(GCP_KEY_PATH)
+    project = os.environ.get("GCP_PROJECT") or client.project
+    table_id = f"{project}.{BQ_DATASET}.{BQ_TABLE}"
 
     # load_table_from_dataframe derives an explicit schema from the DataFrame, so
     # autodetect must not be set here (BigQuery rejects schema + autodetect together).

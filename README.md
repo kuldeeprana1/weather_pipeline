@@ -77,8 +77,8 @@ You should see every capital fetched, a merge summary, and a preview table endin
 
 ## 4. Google Cloud setup
 
-1. Create a project named `weather-demographics-bootcamp` in the
-   [GCP Console](https://console.cloud.google.com/).
+1. Create (or select) a project in the [GCP Console](https://console.cloud.google.com/) and
+   note its **Project ID**.
 2. Enable the [BigQuery API](https://console.cloud.google.com/apis/library/bigquery.googleapis.com).
 3. Create a **Service Account** with the **BigQuery Admin** role.
 4. On the account's **Keys** tab, add a new **JSON** key and download it.
@@ -97,8 +97,9 @@ $env:GCP_PROJECT = "your-real-project-id"
 .\.venv\Scripts\python.exe scripts\main.py --upload
 ```
 
-This writes all 28 rows to `weather-demographics-bootcamp.global_weather_data.current_weather_stats`
-using `WRITE_TRUNCATE` (each run replaces the previous snapshot).
+This writes all 28 rows to `<project-id>.global_weather_data.current_weather_stats` using
+`WRITE_TRUNCATE` (each run replaces the previous snapshot). The project is taken from the
+service-account key unless you override it with `$env:GCP_PROJECT`.
 
 ## 6. SQL
 

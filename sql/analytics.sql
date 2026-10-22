@@ -1,6 +1,6 @@
 -- =============================================================================
 -- Step 5 - SQL: querying and transforming the BigQuery table
--- Dataset : weather-demographics-bootcamp.global_weather_data
+-- Dataset : formidable-byte-512417-i9.global_weather_data
 -- Table   : current_weather_stats
 -- =============================================================================
 
@@ -8,12 +8,12 @@
 -- Step 5.1 - Basic exploration: verify schema definitions and row count
 -- -----------------------------------------------------------------------------
 SELECT *
-FROM `weather-demographics-bootcamp.global_weather_data.current_weather_stats`
+FROM `formidable-byte-512417-i9.global_weather_data.current_weather_stats`
 LIMIT 10;
 
 -- Row count (expect 28, one row per capital city in population.csv)
 SELECT COUNT(*) AS total_rows
-FROM `weather-demographics-bootcamp.global_weather_data.current_weather_stats`;
+FROM `formidable-byte-512417-i9.global_weather_data.current_weather_stats`;
 
 
 -- -----------------------------------------------------------------------------
@@ -28,7 +28,7 @@ SELECT
   ROUND(AVG(Temperature), 2)       AS avg_temperature_c,
   ROUND(AVG(TemperatureF), 2)      AS avg_temperature_f,
   ROUND(AVG(WindSpeed), 2)         AS avg_wind_speed_kmh
-FROM `weather-demographics-bootcamp.global_weather_data.current_weather_stats`
+FROM `formidable-byte-512417-i9.global_weather_data.current_weather_stats`
 WHERE Population > 10000000
 GROUP BY Country
 ORDER BY avg_temperature_c DESC
@@ -40,7 +40,7 @@ LIMIT 5;
 -- NOTE: BigQuery does not allow ORDER BY / LIMIT inside a view definition, so the
 --       view exposes the aggregated, filtered rows and the report applies ordering.
 -- -----------------------------------------------------------------------------
-CREATE OR REPLACE VIEW `weather-demographics-bootcamp.global_weather_data.vw_hottest_large_countries` AS
+CREATE OR REPLACE VIEW `formidable-byte-512417-i9.global_weather_data.vw_hottest_large_countries` AS
 SELECT
   Country,
   MAX(City)                         AS capital_city,
@@ -49,12 +49,12 @@ SELECT
   ROUND(AVG(Temperature), 2)        AS avg_temperature_c,
   ROUND(AVG(TemperatureF), 2)       AS avg_temperature_f,
   ROUND(AVG(WindSpeed), 2)          AS avg_wind_speed_kmh
-FROM `weather-demographics-bootcamp.global_weather_data.current_weather_stats`
+FROM `formidable-byte-512417-i9.global_weather_data.current_weather_stats`
 WHERE Population > 10000000
 GROUP BY Country, TemperatureCategory;
 
 -- Verify the view
 SELECT *
-FROM `weather-demographics-bootcamp.global_weather_data.vw_hottest_large_countries`
+FROM `formidable-byte-512417-i9.global_weather_data.vw_hottest_large_countries`
 ORDER BY avg_temperature_c DESC
 LIMIT 5;
