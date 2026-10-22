@@ -11,16 +11,15 @@ SELECT *
 FROM `weather-demographics-bootcamp.global_weather_data.current_weather_stats`
 LIMIT 10;
 
--- Row count (expect 70, one row per city in population.csv)
+-- Row count (expect 28, one row per capital city in population.csv)
 SELECT COUNT(*) AS total_rows
 FROM `weather-demographics-bootcamp.global_weather_data.current_weather_stats`;
 
 
 -- -----------------------------------------------------------------------------
 -- Step 5.2 - Complex aggregation
--- Goal: identify the Top 5 hottest countries containing cities with more than
---       10 million residents. The source data is city-level, so each country can
---       contribute several cities; the weather metrics are averaged per country.
+-- Goal: identify the Top 5 hottest countries whose capital city has more than
+--       10 million residents.
 -- -----------------------------------------------------------------------------
 SELECT
   Country,

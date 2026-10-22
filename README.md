@@ -18,7 +18,7 @@ weather_pipeline/
 ├── .gitignore          # keeps data/, .venv/, caches and secrets out of git
 ├── requirements.txt    # Python dependencies
 ├── data/
-│   └── population.csv  # 70 cities + population + coordinates (not committed)
+│   └── population.csv  # 28 national capitals + population + coordinates (not committed)
 ├── scripts/
 │   ├── main.py         # the pipeline (extract -> merge -> clean -> load)
 │   └── gcp-key.json    # your GCP service account key (NOT committed)
@@ -52,8 +52,9 @@ City,Country,Latitude,Longitude,Population
 Tokyo,Japan,35.6895,139.6917,37400068
 ```
 
-This is the instructor-provided *Global demographic dataset* (sheet `Countries`, 70 rows).
-If you have the `.xlsx`, convert it to CSV with:
+This is the instructor-provided *Global demographic dataset* (sheet `Countries`, 70 rows),
+**filtered down to the 28 national capitals it contains** — non-capital cities such as
+Shanghai, Mumbai, Istanbul and Toronto are excluded. To rebuild it from the `.xlsx`:
 
 ```powershell
 .\.venv\Scripts\python.exe -c "import pandas as pd; d=pd.read_excel(r'path\to\Global demographic dataset .xlsx', sheet_name='Countries'); d[['City','Country','Latitude','Longitude','Population']].to_csv('data/population.csv', index=False)"
@@ -70,8 +71,8 @@ Always confirm it works locally **before** touching the cloud:
 .\.venv\Scripts\python.exe scripts\main.py
 ```
 
-You should see every city fetched, a merge summary, and a preview table ending with
-`[transform] final shape: (70, 11)`.
+You should see every capital fetched, a merge summary, and a preview table ending with
+`[transform] final shape: (28, 11)`.
 
 ## 4. Google Cloud setup
 
@@ -95,7 +96,7 @@ $env:GCP_PROJECT = "your-real-project-id"
 .\.venv\Scripts\python.exe scripts\main.py --upload
 ```
 
-This writes all 70 rows to `weather-demographics-bootcamp.global_weather_data.current_weather_stats`
+This writes all 28 rows to `weather-demographics-bootcamp.global_weather_data.current_weather_stats`
 using `WRITE_TRUNCATE` (each run replaces the previous snapshot).
 
 ## 6. SQL
