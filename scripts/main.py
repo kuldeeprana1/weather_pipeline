@@ -2,12 +2,17 @@
 Live Weather + Demographics ETL pipeline
 ========================================
 Extracts live weather (temperature, wind speed) for 50 global capital cities from the
-Open-Meteo API, merges it with a static population dataset, then cleans and normalises
-the unified result.
+Open-Meteo API, merges it with a static population dataset, cleans and normalises the
+result, and (optionally) loads it into BigQuery.
+
+Usage:
+    python scripts/main.py            # extract + transform and print to the terminal
+    python scripts/main.py --upload   # ...and load the result into BigQuery
 """
 
 from __future__ import annotations
 
+import argparse
 import os
 import sys
 import time
@@ -24,6 +29,11 @@ DATA_DIR = os.path.join(PROJECT_ROOT, "data")
 POPULATION_CSV = os.path.join(DATA_DIR, "population.csv")
 
 API_URL = "https://api.open-meteo.com/v1/forecast"
+
+GCP_KEY_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "gcp-key.json")
+GCP_PROJECT = os.environ.get("GCP_PROJECT", "weather-demographics-bootcamp")
+BQ_DATASET = os.environ.get("BQ_DATASET", "global_weather_data")
+BQ_TABLE = "current_weather_stats"
 
 
 def categorize(temperature: float) -> str:
@@ -140,9 +150,43 @@ def clean_and_normalize(df: pd.DataFrame) -> pd.DataFrame:
 
 
 # --------------------------------------------------------------------------- #
+# Step 4.3 - Load the cleaned DataFrame into BigQuery
+# --------------------------------------------------------------------------- #
+def load_to_bigquery(df: pd.DataFrame) -> None:
+    try:
+        from google.cloud import bigquery
+    except ImportError:
+        sys.exit("google-cloud-bigquery is not installed. Run: pip install google-cloud-bigquery")
+
+    if not os.path.exists(GCP_KEY_PATH):
+        sys.exit(
+            f"Service account key not found at {GCP_KEY_PATH}.\n"
+            "Create a JSON key in the GCP console and save it as scripts/gcp-key.json."
+        )
+
+    client = bigquery.Client.from_service_account_json(GCP_KEY_PATH, project=GCP_PROJECT)
+    table_id = f"{GCP_PROJECT}.{BQ_DATASET}.{BQ_TABLE}"
+
+    job_config = bigquery.LoadJobConfig(
+        write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE,
+        autodetect=True,
+    )
+    print(f"\n[load] writing {len(df)} rows to {table_id} ...")
+    job = client.load_table_from_dataframe(df, table_id, job_config=job_config)
+    job.result()
+
+    table = client.get_table(table_id)
+    print(f"[load] done - {table.num_rows} rows now in {table_id}")
+
+
+# --------------------------------------------------------------------------- #
 # Entry point
 # --------------------------------------------------------------------------- #
 def main() -> None:
+    parser = argparse.ArgumentParser(description="Live weather + demographics pipeline")
+    parser.add_argument("--upload", action="store_true", help="load the result into BigQuery")
+    args = parser.parse_args()
+
     population_df = load_population()
     weather_df = collect_weather(population_df)
     merged_df = merge_datasets(population_df, weather_df)
@@ -151,6 +195,11 @@ def main() -> None:
     print("\n[transform] preview (top 10 rows):")
     print(clean_df.head(10).to_string(index=False))
     print(f"\n[transform] final shape: {clean_df.shape}")
+
+    if args.upload:
+        load_to_bigquery(clean_df)
+    else:
+        print("\n[load] skipped - pass --upload to write the result to BigQuery")
 
 
 if __name__ == "__main__":
