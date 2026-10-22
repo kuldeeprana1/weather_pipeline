@@ -54,7 +54,8 @@ Tokyo,Japan,35.6895,139.6917,37400068
 
 This is the instructor-provided *Global demographic dataset* (sheet `Countries`, 70 rows),
 **filtered down to the 28 national capitals it contains** — non-capital cities such as
-Shanghai, Mumbai, Istanbul and Toronto are excluded. To rebuild it from the `.xlsx`:
+Shanghai, Mumbai, Istanbul and Toronto are excluded. To convert the `.xlsx`, then keep only
+the capital-city rows:
 
 ```powershell
 .\.venv\Scripts\python.exe -c "import pandas as pd; d=pd.read_excel(r'path\to\Global demographic dataset .xlsx', sheet_name='Countries'); d[['City','Country','Latitude','Longitude','Population']].to_csv('data/population.csv', index=False)"
@@ -118,11 +119,11 @@ exposes the filtered aggregation and the report applies the ordering.
 3. Add a **Geo Map**: spatial dimension `Country`, metric `avg_temperature_c`, colour
    gradient blue → red.
 4. Add a drop-down control on `TemperatureCategory` (Cold / Mild / Hot).
-5. Add a table: `Country | TemperatureCategory | avg_temperature_c | total_population`.
+5. Add a table: `Country | capital_city | TemperatureCategory | avg_temperature_c | population`.
 6. Apply a theme, add a title, and click **Share** → *Anyone with the link can view*.
 
 **Gotcha:** a few country names in the source data are not the geo-map canonical form —
-notably `DR Congo`, `UK`, `USA` and `South Korea`. If a country fails to plot, either rename
+notably `UK`, `DR Congo` and `South Korea`. If a country fails to plot, either rename
 it in the view (`CASE WHEN Country = 'DR Congo' THEN 'Democratic Republic of the Congo' ...`)
 or add `AVG(Latitude)` / `AVG(Longitude)` to the view and plot by coordinates instead.
 

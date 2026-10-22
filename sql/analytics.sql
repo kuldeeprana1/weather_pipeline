@@ -23,12 +23,11 @@ FROM `weather-demographics-bootcamp.global_weather_data.current_weather_stats`;
 -- -----------------------------------------------------------------------------
 SELECT
   Country,
-  COUNT(*)                          AS city_count,
-  STRING_AGG(City, ', ')            AS cities,
-  SUM(Population)                   AS total_population,
-  ROUND(AVG(Temperature), 2)        AS avg_temperature_c,
-  ROUND(AVG(TemperatureF), 2)       AS avg_temperature_f,
-  ROUND(AVG(WindSpeed), 2)          AS avg_wind_speed_kmh
+  MAX(City)                        AS capital_city,
+  MAX(Population)                  AS population,
+  ROUND(AVG(Temperature), 2)       AS avg_temperature_c,
+  ROUND(AVG(TemperatureF), 2)      AS avg_temperature_f,
+  ROUND(AVG(WindSpeed), 2)         AS avg_wind_speed_kmh
 FROM `weather-demographics-bootcamp.global_weather_data.current_weather_stats`
 WHERE Population > 10000000
 GROUP BY Country
@@ -44,12 +43,11 @@ LIMIT 5;
 CREATE OR REPLACE VIEW `weather-demographics-bootcamp.global_weather_data.vw_hottest_large_countries` AS
 SELECT
   Country,
+  MAX(City)                         AS capital_city,
   TemperatureCategory,
-  COUNT(*)                          AS city_count,
-  SUM(Population)                   AS total_population,
+  MAX(Population)                   AS population,
   ROUND(AVG(Temperature), 2)        AS avg_temperature_c,
   ROUND(AVG(TemperatureF), 2)       AS avg_temperature_f,
-  ROUND(MAX(Temperature), 2)        AS max_temperature_c,
   ROUND(AVG(WindSpeed), 2)          AS avg_wind_speed_kmh
 FROM `weather-demographics-bootcamp.global_weather_data.current_weather_stats`
 WHERE Population > 10000000

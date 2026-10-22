@@ -167,9 +167,10 @@ def load_to_bigquery(df: pd.DataFrame) -> None:
     client = bigquery.Client.from_service_account_json(GCP_KEY_PATH, project=GCP_PROJECT)
     table_id = f"{GCP_PROJECT}.{BQ_DATASET}.{BQ_TABLE}"
 
+    # load_table_from_dataframe derives an explicit schema from the DataFrame, so
+    # autodetect must not be set here (BigQuery rejects schema + autodetect together).
     job_config = bigquery.LoadJobConfig(
         write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE,
-        autodetect=True,
     )
     print(f"\n[load] writing {len(df)} rows to {table_id} ...")
     job = client.load_table_from_dataframe(df, table_id, job_config=job_config)
