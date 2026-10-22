@@ -18,15 +18,18 @@ FROM `weather-demographics-bootcamp.global_weather_data.current_weather_stats`;
 
 -- -----------------------------------------------------------------------------
 -- Step 5.2 - Complex aggregation
--- Goal: identify the Top 5 hottest countries with more than 10 million residents.
+-- Goal: identify the Top 5 hottest countries containing cities with more than
+--       10 million residents. The source data is city-level, so each country can
+--       contribute several cities; the weather metrics are averaged per country.
 -- -----------------------------------------------------------------------------
 SELECT
   Country,
-  MAX(City)                        AS capital_city,
-  MAX(Population)                  AS population,
-  ROUND(AVG(Temperature), 2)       AS avg_temperature_c,
-  ROUND(AVG(TemperatureF), 2)      AS avg_temperature_f,
-  ROUND(AVG(WindSpeed), 2)         AS avg_wind_speed_kmh
+  COUNT(*)                          AS city_count,
+  STRING_AGG(City, ', ')            AS cities,
+  SUM(Population)                   AS total_population,
+  ROUND(AVG(Temperature), 2)        AS avg_temperature_c,
+  ROUND(AVG(TemperatureF), 2)       AS avg_temperature_f,
+  ROUND(AVG(WindSpeed), 2)          AS avg_wind_speed_kmh
 FROM `weather-demographics-bootcamp.global_weather_data.current_weather_stats`
 WHERE Population > 10000000
 GROUP BY Country
