@@ -11,7 +11,7 @@ SELECT *
 FROM `weather-demographics-bootcamp.global_weather_data.current_weather_stats`
 LIMIT 10;
 
--- Row count (expect 50, one row per capital city)
+-- Row count (expect 70, one row per city in population.csv)
 SELECT COUNT(*) AS total_rows
 FROM `weather-demographics-bootcamp.global_weather_data.current_weather_stats`;
 

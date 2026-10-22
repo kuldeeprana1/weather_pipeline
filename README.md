@@ -1,9 +1,9 @@
 # Weather + Demographics Pipeline
 
-An end-to-end data pipeline that pulls **live weather** for 50 global capital cities from the
-[Open-Meteo API](https://open-meteo.com/), merges it with a **static population dataset**,
-cleans and normalises the result, loads it into **BigQuery**, and exposes it to a
-**Looker Studio** dashboard.
+An end-to-end data pipeline that pulls **live weather** for every city in the population
+dataset from the [Open-Meteo API](https://open-meteo.com/), merges it with that **static
+demographic dataset**, cleans and normalises the result, loads it into **BigQuery**, and
+exposes it to a **Looker Studio** dashboard.
 
 ```
 Open-Meteo API ─┐
@@ -18,7 +18,7 @@ weather_pipeline/
 ├── .gitignore          # keeps data/, .venv/, caches and secrets out of git
 ├── requirements.txt    # Python dependencies
 ├── data/
-│   └── population.csv  # 50 capital cities + population + coordinates (not committed)
+│   └── population.csv  # 70 cities + population + coordinates (not committed)
 ├── scripts/
 │   ├── main.py         # the pipeline (extract -> merge -> clean -> load)
 │   └── gcp-key.json    # your GCP service account key (NOT committed)
@@ -49,11 +49,18 @@ python -m venv .venv
 
 ```
 City,Country,Latitude,Longitude,Population
-Tokyo,Japan,35.6897,139.6922,37732000
+Tokyo,Japan,35.6895,139.6917,37400068
 ```
 
-Download your demographic dataset and save it as `data/population.csv`.
-(This file is gitignored, so every clone needs to supply its own copy.)
+This is the instructor-provided *Global demographic dataset* (sheet `Countries`, 70 rows).
+If you have the `.xlsx`, convert it to CSV with:
+
+```powershell
+.\.venv\Scripts\python.exe -c "import pandas as pd; d=pd.read_excel(r'path\to\Global demographic dataset .xlsx', sheet_name='Countries'); d[['City','Country','Latitude','Longitude','Population']].to_csv('data/population.csv', index=False)"
+```
+
+The pipeline processes **every row** in the file, so adding or removing cities needs no code
+change. `population.csv` is gitignored, so every clone needs to supply its own copy.
 
 ## 3. Run the pipeline locally
 
@@ -63,8 +70,8 @@ Always confirm it works locally **before** touching the cloud:
 .\.venv\Scripts\python.exe scripts\main.py
 ```
 
-You should see all 50 cities fetched, a merge summary, and a preview table ending with
-`[transform] final shape: (50, 11)`.
+You should see every city fetched, a merge summary, and a preview table ending with
+`[transform] final shape: (70, 11)`.
 
 ## 4. Google Cloud setup
 
@@ -88,7 +95,7 @@ $env:GCP_PROJECT = "your-real-project-id"
 .\.venv\Scripts\python.exe scripts\main.py --upload
 ```
 
-This writes all 50 rows to `weather-demographics-bootcamp.global_weather_data.current_weather_stats`
+This writes all 70 rows to `weather-demographics-bootcamp.global_weather_data.current_weather_stats`
 using `WRITE_TRUNCATE` (each run replaces the previous snapshot).
 
 ## 6. SQL
@@ -113,9 +120,10 @@ exposes the filtered aggregation and the report applies the ordering.
 5. Add a table: `Country | TemperatureCategory | avg_temperature_c | total_population`.
 6. Apply a theme, add a title, and click **Share** → *Anyone with the link can view*.
 
-**Gotcha:** some country names from the source data (`Korea, South`, `Congo (Kinshasa)`,
-`Burma`, `Côte d’Ivoire`) may not plot on a geo map. Either rename them in the view or
-add `AVG(Latitude)` / `AVG(Longitude)` to the view and use coordinates instead.
+**Gotcha:** a few country names in the source data are not the geo-map canonical form —
+notably `DR Congo`, `UK`, `USA` and `South Korea`. If a country fails to plot, either rename
+it in the view (`CASE WHEN Country = 'DR Congo' THEN 'Democratic Republic of the Congo' ...`)
+or add `AVG(Latitude)` / `AVG(Longitude)` to the view and plot by coordinates instead.
 
 ## 8. Push to GitHub and open a Pull Request
 

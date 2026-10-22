@@ -1,9 +1,9 @@
 """
 Live Weather + Demographics ETL pipeline
 ========================================
-Extracts live weather (temperature, wind speed) for 50 global capital cities from the
-Open-Meteo API, merges it with a static population dataset, cleans and normalises the
-result, and (optionally) loads it into BigQuery.
+Extracts live weather (temperature, wind speed) for every city in the demographic
+dataset (data/population.csv) from the Open-Meteo API, merges the two sources, cleans
+and normalises the result, and (optionally) loads it into BigQuery.
 
 Usage:
     python scripts/main.py            # extract + transform and print to the terminal
