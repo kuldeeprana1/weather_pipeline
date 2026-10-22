@@ -2,7 +2,8 @@
 Live Weather + Demographics ETL pipeline
 ========================================
 Extracts live weather (temperature, wind speed) for 50 global capital cities from the
-Open-Meteo API and stores it for the downstream demographics merge.
+Open-Meteo API, merges it with a static population dataset, then cleans and normalises
+the unified result.
 """
 
 from __future__ import annotations
@@ -10,6 +11,7 @@ from __future__ import annotations
 import os
 import sys
 import time
+from datetime import datetime, timezone
 
 import pandas as pd
 import requests
@@ -22,6 +24,15 @@ DATA_DIR = os.path.join(PROJECT_ROOT, "data")
 POPULATION_CSV = os.path.join(DATA_DIR, "population.csv")
 
 API_URL = "https://api.open-meteo.com/v1/forecast"
+
+
+def categorize(temperature: float) -> str:
+    """Map a Celsius temperature to a categorical metric."""
+    if temperature < 10:
+        return "Cold"
+    if temperature < 25:
+        return "Mild"
+    return "Hot"
 
 
 # --------------------------------------------------------------------------- #
@@ -88,14 +99,58 @@ def collect_weather(population_df: pd.DataFrame) -> pd.DataFrame:
 
 
 # --------------------------------------------------------------------------- #
+# Step 3.2 - Merge weather with demographics
+# --------------------------------------------------------------------------- #
+def merge_datasets(population_df: pd.DataFrame, weather_df: pd.DataFrame) -> pd.DataFrame:
+    """Inner-join the two sources on the shared City + Country key."""
+    merged = pd.merge(population_df, weather_df, on=["City", "Country"], how="inner")
+    print(f"[merge] joined {len(population_df)} population rows with "
+          f"{len(weather_df)} weather rows -> {len(merged)} rows")
+    return merged
+
+
+# --------------------------------------------------------------------------- #
+# Step 3.3 - Clean, normalise and derive features
+# --------------------------------------------------------------------------- #
+def clean_and_normalize(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
+
+    print("\n[clean] null values per column before handling:")
+    print(df.isna().sum().to_string())
+
+    # Handle missing data: impute weather, drop rows without a population figure.
+    df["Temperature"] = df["Temperature"].fillna(df["Temperature"].median())
+    df["WindSpeed"] = df["WindSpeed"].fillna(0.0)
+    df = df.dropna(subset=["Population", "Latitude", "Longitude"])
+
+    # Enforce explicit data types.
+    df["Population"] = df["Population"].astype("int64")
+    df["Temperature"] = df["Temperature"].astype("float64")
+    df["WindSpeed"] = df["WindSpeed"].astype("float64")
+    df["Latitude"] = df["Latitude"].astype("float64")
+    df["Longitude"] = df["Longitude"].astype("float64")
+    df["ObservedAt"] = pd.to_datetime(df["ObservedAt"], errors="coerce")
+
+    # Derived feature columns.
+    df["TemperatureF"] = (df["Temperature"] * 9 / 5 + 32).astype("float64")
+    df["TemperatureCategory"] = df["Temperature"].apply(categorize)
+    df["IngestedAt"] = datetime.now(timezone.utc)
+
+    return df.reset_index(drop=True)
+
+
+# --------------------------------------------------------------------------- #
 # Entry point
 # --------------------------------------------------------------------------- #
 def main() -> None:
     population_df = load_population()
     weather_df = collect_weather(population_df)
+    merged_df = merge_datasets(population_df, weather_df)
+    clean_df = clean_and_normalize(merged_df)
 
-    print("\n[extract] live weather preview:")
-    print(weather_df.head(10).to_string(index=False))
+    print("\n[transform] preview (top 10 rows):")
+    print(clean_df.head(10).to_string(index=False))
+    print(f"\n[transform] final shape: {clean_df.shape}")
 
 
 if __name__ == "__main__":
